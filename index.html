@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM House Cleaning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos adicionais se necessário */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="min-h-screen bg-gray-50">
+        <!-- Header -->
+        <div class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 py-6">
+
+                
+                <div class="text-center mb-6">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">✨ OutCleaning</h1>
+                    <p class="text-lg text-gray-600">Sua rotina mais leve e organizada</p>
+                </div>
+                
+                <!-- Estatísticas -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div id="totalLeads" class="text-2xl font-bold text-green-800">0</div>
+                        <div class="text-sm text-green-600">📋 Leads Ativos</div>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div id="totalClientes" class="text-2xl font-bold text-blue-800">0</div>
+                        <div class="text-sm text-blue-600">👥 Clientes</div>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                        <div id="servicosRecorrentes" class="text-2xl font-bold text-purple-800">0</div>
+                        <div class="text-sm text-purple-600">🔄 Recorrentes</div>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                        <div id="servicosUnicos" class="text-2xl font-bold text-orange-800">0</div>
+                        <div class="text-sm text-orange-600">⚡ Únicos</div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex space-x-1 mb-6">
+                    <button
+                        id="leadsTab"
+                        class="px-4 py-2 rounded-lg font-medium transition-colors bg-blue-100 text-blue-800 border border-blue-200"
+                    >
+                        📋 Leads (0)
+                    </button>
+                    <button
+                        id="clientesTab"
+                        class="px-4 py-2 rounded-lg font-medium transition-colors text-gray-600 hover:bg-gray-100"
+                    >
+                        👥 Clientes (0)
+                    </button>
+                </div>
+
+                <!-- Filtros e Busca -->
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <div class="relative flex-1">
+                        <!-- Ícone de busca -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search absolute left-3 top-3 h-4 w-4 text-gray-400"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input
+                            type="text"
+                            id="searchTerm"
+                            placeholder="Buscar por nome ou telefone..."
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+                    <select
+                        id="statusFilter"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="all">Todos os status</option>
+                        <option value="Respondeu">Respondeu</option>
+                        <option value="Ignorou">Ignorou</option>
+                        <option value="Vai pensar">Vai pensar</option>
+                        <option value="Fechou">Fechou</option>
+                    </select>
+                    <button
+                        id="newLeadButton"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 whitespace-nowrap"
+                    >
+                        <!-- Ícone de mais -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus h-4 w-4"><path d="M12 5v14M5 12h14"/></svg>
+                        Novo Lead
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <div id="loadingMessage" class="text-center py-12">
+                <div class="text-6xl mb-4">⏳</div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Carregando dados...</h3>
+                <p class="text-gray-500">Aguarde um momento</p>
+            </div>
+            <div id="noLeadsMessage" class="text-center py-12 hidden">
+                <div class="text-6xl mb-4">📋</div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum lead encontrado</h3>
+                <p class="text-gray-500">Comece adicionando um novo lead</p>
+            </div>
+            <div id="leadsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Leads serão renderizados aqui pelo JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Adicionar/Editar Lead -->
+    <div id="leadModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modalTitle" class="text-2xl font-bold mb-4">Novo Lead</h2>
+            <form id="leadForm" class="space-y-4">
+                <div>
+                    <label for="nome" class="block text-sm font-medium text-gray-700">Nome</label>
+                    <input type="text" id="nome" name="nome" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="telefone" class="block text-sm font-medium text-gray-700">Telefone</label>
+                    <input type="text" id="telefone" name="telefone" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">E-mail</label>
+                    <input type="email" id="email" name="email" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                    <select id="status" name="status" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="Respondeu">Respondeu</option>
+                        <option value="Ignorou">Ignorou</option>
+                        <option value="Vai pensar">Vai pensar</option>
+                        <option value="Fechou">Fechou</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="tipo_servico" class="block text-sm font-medium text-gray-700">Tipo de Serviço</label>
+                    <select id="tipo_servico" name="tipo_servico" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Selecione</option>
+                        <option value="Limpeza Única">Limpeza Única</option>
+                        <option value="Semanal">Semanal</option>
+                        <option value="Quinzenal">Quinzenal</option>
+                        <option value="Mensal">Mensal</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="endereco" class="block text-sm font-medium text-gray-700">Endereço</label>
+                    <input type="text" id="endereco" name="endereco" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="valor_servico" class="block text-sm font-medium text-gray-700">Valor do Serviço</label>
+                    <input type="text" id="valor_servico" name="valor_servico" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="observacoes" class="block text-sm font-medium text-gray-700">Observações</label>
+                    <textarea id="observacoes" name="observacoes" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                    <label for="ultimo_contato" class="block text-sm font-medium text-gray-700">Último Contato</label>
+                    <input type="date" id="ultimo_contato" name="ultimo_contato" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <button type="submit" id="saveLeadButton" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                    Salvar Lead
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = 'https://irthkomtgiayhslavyls.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlydGhrb210Z2lheWhzbGF2eWxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NjM1NjgsImV4cCI6MjA2OTUzOTU2OH0.JKG_o1IJDlZp6WC0_n2FjlxIJ-OVTSuSUovGH5vKMdw';
+
+        // Função para extrair o cliente_id do subdomínio
+        const getClienteId = () => {
+            const hostname = window.location.hostname;
+            console.log('Hostname atual:', hostname);
+            
+            // Se for localhost ou IP, usar 'dev' como cliente_id para testes
+            if (hostname === 'localhost' || hostname.startsWith('127.') || hostname.startsWith('192.') || hostname.includes('file://')) {
+                return 'dev';
+            }
+            
+            // Extrair subdomínio (primeira parte antes do primeiro ponto)
+            const parts = hostname.split('.');
+            if (parts.length >= 3) {
+                // Para domínios como maria.outcleaning.site
+                return parts[0];
+            } else if (parts.length === 2) {
+                // Para domínios como outcleaning.site (usar 'main' como padrão)
+                return 'main';
+            }
+            
+            // Fallback
+            return 'default';
+        };
+
+        // Cliente ID atual
+        const CLIENTE_ID = getClienteId();
+        console.log('Cliente ID:', CLIENTE_ID);
+
+
+
+        class SupabaseClient {
+            constructor(url, key) {
+                this.url = url;
+                this.key = key;
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'apikey': key,
+                    'Authorization': `Bearer ${key}`
+                };
+            }
+
+            async select(table, query = '*') {
+                try {
+                    // Filtrar por cliente_id
+                    const response = await fetch(`${this.url}/rest/v1/${table}?select=${query}&cliente_id=eq.${CLIENTE_ID}`, {
+                        headers: this.headers
+                    });
+                    if (!response.ok) throw new Error('Erro ao buscar dados');
+                    return await response.json();
+                } catch(error) {
+                    console.error('Erro Supabase SELECT:', error);
+                    return [];
+                }
+            }
+
+            async insert(table, data) {
+                try {
+                    // Adicionar cliente_id aos dados
+                    const dataWithClientId = { ...data, cliente_id: CLIENTE_ID };
+                    const response = await fetch(`${this.url}/rest/v1/${table}`, {
+                        method: 'POST',
+                        headers: this.headers,
+                        body: JSON.stringify(dataWithClientId)
+                    });
+                    if (!response.ok) throw new Error('Erro ao inserir dados');
+                    return await response.json();
+                } catch(error) {
+                    console.error('Erro Supabase INSERT:', error);
+                    return null;
+                }
+            }
+
+            async update(table, id, data) {
+                try {
+                    // Garantir que o cliente_id esteja nos dados e filtrar por cliente_id
+                    const dataWithClientId = { ...data, cliente_id: CLIENTE_ID };
+                    const response = await fetch(`${this.url}/rest/v1/${table}?id=eq.${id}&cliente_id=eq.${CLIENTE_ID}`, {
+                        method: 'PATCH',
+                        headers: this.headers,
+                        body: JSON.stringify(dataWithClientId)
+                    });
+                    if (!response.ok) throw new Error('Erro ao atualizar dados');
+                    return await response.json();
+                } catch(error) {
+                    console.error('Erro Supabase UPDATE:', error);
+                    return null;
+                }
+            }
+
+            async delete(table, id) {
+                try {
+                    // Filtrar por cliente_id para garantir que só delete dados do cliente atual
+                    const response = await fetch(`${this.url}/rest/v1/${table}?id=eq.${id}&cliente_id=eq.${CLIENTE_ID}`, {
+                        method: 'DELETE',
+                        headers: this.headers
+                    });
+                    if (!response.ok) throw new Error('Erro ao deletar dados');
+                    return true;
+                } catch(error) {
+                    console.error('Erro Supabase DELETE:', error);
+                    return false;
+                }
+            }
+        }
+
+        const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let activeTab = 'leads';
+        let leads = [];
+        let loading = true;
+        let saving = false;
+        let showModal = false;
+        let editingLead = null;
+        let searchTerm = '';
+        let statusFilter = 'all';
+        let formData = {
+            nome: '',
+            telefone: '',
+            email: '',
+            status: 'Respondeu',
+            tipo_servico: '',
+            endereco: '',
+            valor_servico: '',
+            observacoes: '',
+            ultimo_contato: ''
+        };
+
+        const statusColors = {
+            'Respondeu': 'bg-green-100 text-green-800 border-green-200',
+            'Ignorou': 'bg-red-100 text-red-800 border-red-200',
+            'Vai pensar': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+            'Fechou': 'bg-blue-100 text-blue-800 border-blue-200'
+        };
+
+        const tiposServico = ['Limpeza Única', 'Semanal', 'Quinzenal', 'Mensal'];
+
+        const resetForm = () => {
+            formData = {
+                nome: '',
+                telefone: '',
+                email: '',
+                status: 'Respondeu',
+                tipo_servico: '',
+                endereco: '',
+                valor_servico: '',
+                observacoes: '',
+                ultimo_contato: ''
+            };
+            editingLead = null;
+            document.getElementById('leadForm').reset();
+            document.getElementById('modalTitle').innerText = 'Novo Lead';
+        };
+
+        const loadLeads = async () => {
+            loading = true;
+            document.getElementById('loadingMessage').classList.remove('hidden');
+            document.getElementById('leadsContainer').innerHTML = '';
+            document.getElementById('noLeadsMessage').classList.add('hidden');
+
+            try {
+                const data = await supabase.select('leads');
+                if (data && data.length >= 0) {
+                    leads = data;
+                } else {
+                    // Fallback para localStorage com cliente_id
+                    const savedLeads = localStorage.getItem(`crm-leads-${CLIENTE_ID}`);
+                    if (savedLeads) {
+                        leads = JSON.parse(savedLeads);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao carregar leads:', error);
+                // Fallback para localStorage com cliente_id
+                const savedLeads = localStorage.getItem(`crm-leads-${CLIENTE_ID}`);
+                if (savedLeads) {
+                    leads = JSON.parse(savedLeads);
+                }
+            }
+            loading = false;
+            document.getElementById('loadingMessage').classList.add('hidden');
+            renderLeads();
+            updateStats();
+        };
+
+        const updateStats = () => {
+            const totalLeads = leads.filter(l => ['Respondeu', 'Ignorou', 'Vai pensar'].includes(l.status)).length;
+            const totalClientes = leads.filter(l => l.status === 'Fechou').length;
+            const servicosRecorrentes = leads.filter(l => l.status === 'Fechou' && ['Semanal', 'Quinzenal', 'Mensal'].includes(l.tipo_servico)).length;
+            const servicosUnicos = leads.filter(l => l.status === 'Fechou' && l.tipo_servico === 'Limpeza Única').length;
+
+            document.getElementById('totalLeads').innerText = totalLeads;
+            document.getElementById('totalClientes').innerText = totalClientes;
+            document.getElementById('servicosRecorrentes').innerText = servicosRecorrentes;
+            document.getElementById('servicosUnicos').innerText = servicosUnicos;
+
+            document.getElementById('leadsTab').innerText = `📋 Leads (${totalLeads})`;
+            document.getElementById('clientesTab').innerText = `👥 Clientes (${totalClientes})`;
+        };
+
+        const getGoogleMapsLink = (endereco) => {
+            if (!endereco) return '#';
+            const encodedAddress = encodeURIComponent(endereco);
+            return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        };
+
+        const formatPhone = (phone) => {
+            return phone.replace(/\D/g, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        };
+
+        const getWhatsAppLink = (phone) => {
+            const cleanPhone = phone.replace(/\D/g, '');
+            return `https://wa.me/55${cleanPhone}`;
+        };
+
+        const renderLeads = () => {
+            const leadsContainer = document.getElementById('leadsContainer');
+            leadsContainer.innerHTML = '';
+
+            const filteredLeads = leads.filter(lead => {
+                const matchesSearch = lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                     lead.telefone.includes(searchTerm);
+                const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
+                const matchesTab = activeTab === 'leads' ? 
+                  ['Respondeu', 'Ignorou', 'Vai pensar'].includes(lead.status) :
+                  lead.status === 'Fechou';
+                
+                return matchesSearch && matchesStatus && matchesTab;
+            });
+
+            if (filteredLeads.length === 0) {
+                document.getElementById('noLeadsMessage').classList.remove('hidden');
+                if (searchTerm || statusFilter !== 'all') {
+                    document.getElementById('noLeadsMessage').querySelector('p').innerText = 'Tente ajustar os filtros de busca';
+                } else {
+                    document.getElementById('noLeadsMessage').querySelector('p').innerText = 'Comece adicionando um novo lead';
+                }
+                document.getElementById('noLeadsMessage').querySelector('h3').innerText = activeTab === 'leads' ? 'Nenhum lead encontrado' : 'Nenhum cliente encontrado';
+            } else {
+                document.getElementById('noLeadsMessage').classList.add('hidden');
+            }
+
+            filteredLeads.forEach(lead => {
+                const leadCard = document.createElement('div');
+                leadCard.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow';
+                leadCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">${lead.nome}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone h-4 w-4 text-gray-400"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-1.18 2.19l-.7.69a19 19 0 0 0 6 6l.69-.7a2 2 0 0 1 2.19-1.18 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                <a 
+                                    href="${getWhatsAppLink(lead.telefone)}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="text-green-600 hover:text-green-700 font-medium"
+                                >
+                                    ${formatPhone(lead.telefone)}
+                                </a>
+                            </div>
+                            ${lead.email ? `
+                            <div class="flex items-center gap-2 mt-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail h-4 w-4 text-gray-400"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+                                <a 
+                                    href="mailto:${lead.email}"
+                                    class="text-blue-600 hover:text-blue-700 font-medium"
+                                >
+                                    ${lead.email}
+                                </a>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="flex gap-2">
+                            <button data-id="${lead.id}" class="edit-button p-1 text-gray-400 hover:text-blue-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit-2 h-4 w-4"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="M15 5l4 4"/></svg>
+                            </button>
+                            <button data-id="${lead.id}" class="delete-button p-1 text-gray-400 hover:text-red-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 h-4 w-4"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <select data-id="${lead.id}" class="status-select w-full px-3 py-1 rounded-full text-sm font-medium border ${statusColors[lead.status]} cursor-pointer">
+                            <option value="Respondeu" ${lead.status === 'Respondeu' ? 'selected' : ''}>Respondeu</option>
+                            <option value="Ignorou" ${lead.status === 'Ignorou' ? 'selected' : ''}>Ignorou</option>
+                            <option value="Vai pensar" ${lead.status === 'Vai pensar' ? 'selected' : ''}>Vai pensar</option>
+                            <option value="Fechou" ${lead.status === 'Fechou' ? 'selected' : ''}>Fechou</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2 text-sm">
+                        ${lead.tipo_servico ? `
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium">Serviço:</span>
+                                <span class="px-2 py-1 bg-gray-100 rounded text-gray-700">${lead.tipo_servico}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${lead.valor_servico ? `
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dollar-sign h-4 w-4 text-gray-400"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                <span class="font-medium">Valor:</span> R$ ${lead.valor_servico}
+                            </div>
+                        ` : ''}
+
+                        ${lead.endereco ? `
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin h-4 w-4 text-gray-400"><path d="M12 12.72a1 1 0 1 0 0-1.44 1 1 0 0 0 0 1.44Z"/><path d="M19.4 15c-.5 9.9-1.3 17.5-7.4 17.5S4.6 24.9 4.6 15c0-6.6 5.4-12 12-12s7.4 5.4 7.4 12Z"/></svg>
+                                <span class="font-medium">Endereço:</span> ${lead.endereco}
+                                <a href="${getGoogleMapsLink(lead.endereco)}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link h-4 w-4"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                                </a>
+                            </div>
+                        ` : ''}
+
+                        ${lead.ultimo_contato ? `
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar h-4 w-4 text-gray-400"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                                <span class="font-medium">Último Contato:</span> ${lead.ultimo_contato}
+                            </div>
+                        ` : ''}
+
+                        ${lead.observacoes ? `
+                            <div class="flex items-start gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square h-4 w-4 text-gray-400"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                <span class="font-medium">Obs:</span> ${lead.observacoes}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                leadsContainer.appendChild(leadCard);
+            });
+
+            // Adicionar event listeners para os botões de editar e deletar e select de status
+            document.querySelectorAll('.edit-button').forEach(button => {
+                button.addEventListener('click', (e) => handleEdit(e.currentTarget.dataset.id));
+            });
+            document.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', (e) => handleDelete(e.currentTarget.dataset.id));
+            });
+            document.querySelectorAll('.status-select').forEach(select => {
+                select.addEventListener('change', (e) => handleStatusChange(e.currentTarget.dataset.id, e.currentTarget.value));
+            });
+        };
+
+        const handleSubmit = async (event) => {
+            event.preventDefault();
+            
+            const formElements = event.target.elements;
+            const currentFormData = {
+                nome: formElements.nome.value,
+                telefone: formElements.telefone.value,
+                email: formElements.email.value,
+                status: formElements.status.value,
+                tipo_servico: formElements.tipo_servico.value,
+                endereco: formElements.endereco.value,
+                valor_servico: formElements.valor_servico.value,
+                observacoes: formElements.observacoes.value,
+                ultimo_contato: formElements.ultimo_contato.value
+            };
+
+            if (!currentFormData.nome || !currentFormData.telefone) {
+                alert('Nome e telefone são obrigatórios!');
+                return;
+            }
+
+            saving = true;
+            document.getElementById('saveLeadButton').innerText = 'Salvando...';
+            document.getElementById('saveLeadButton').disabled = true;
+
+            const leadData = {
+                ...currentFormData,
+                id: editingLead ? editingLead.id : Date.now(),
+                data_entrada: editingLead ? editingLead.data_entrada : new Date().toISOString().split('T')[0],
+                created_at: editingLead ? editingLead.created_at : new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                cliente_id: CLIENTE_ID // Garantir que o cliente_id está sempre presente
+            };
+
+            try {
+                if (editingLead) {
+                    await supabase.update('leads', editingLead.id, leadData);
+                    leads = leads.map(lead => lead.id === editingLead.id ? leadData : lead);
+                } else {
+                    await supabase.insert('leads', leadData);
+                    leads = [...leads, leadData];
+                }
+            } catch (error) {
+                console.error('Erro ao salvar no Supabase:', error);
+                if (editingLead) {
+                    leads = leads.map(lead => lead.id === editingLead.id ? leadData : lead);
+                } else {
+                    leads = [...leads, leadData];
+                }
+            }
+
+            saving = false;
+            document.getElementById('saveLeadButton').innerText = 'Salvar Lead';
+            document.getElementById('saveLeadButton').disabled = false;
+            document.getElementById('leadModal').classList.remove('show');
+            resetForm();
+            renderLeads();
+            updateStats();
+            // Atualizar localStorage com cliente_id específico
+            localStorage.setItem(`crm-leads-${CLIENTE_ID}`, JSON.stringify(leads));
+        };
+
+        const handleEdit = (id) => {
+            editingLead = leads.find(lead => lead.id == id);
+            if (editingLead) {
+                document.getElementById('modalTitle').innerText = 'Editar Lead';
+                for (const key in editingLead) {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.value = editingLead[key];
+                    }
+                }
+                document.getElementById('leadModal').classList.add('show');
+            }
+        };
+
+        const handleDelete = async (id) => {
+            if (window.confirm('Tem certeza que deseja excluir este registro?')) {
+                try {
+                    await supabase.delete('leads', id);
+                    leads = leads.filter(lead => lead.id != id);
+                    renderLeads();
+                    updateStats();
+                    // Atualizar localStorage com cliente_id específico
+                    localStorage.setItem(`crm-leads-${CLIENTE_ID}`, JSON.stringify(leads));
+                } catch (error) {
+                    console.error('Erro ao deletar:', error);
+                    leads = leads.filter(lead => lead.id != id);
+                    renderLeads();
+                    updateStats();
+                    // Atualizar localStorage com cliente_id específico
+                    localStorage.setItem(`crm-leads-${CLIENTE_ID}`, JSON.stringify(leads));
+                }
+            }
+        };
+
+        const handleStatusChange = async (id, newStatus) => {
+            const leadToUpdate = leads.find(lead => lead.id == id);
+            const updatedLead = { 
+                ...leadToUpdate, 
+                status: newStatus, 
+                updated_at: new Date().toISOString(),
+                cliente_id: CLIENTE_ID // Garantir que o cliente_id está sempre presente
+            };
+            
+            try {
+                await supabase.update('leads', id, updatedLead);
+                leads = leads.map(lead => 
+                    lead.id == id ? updatedLead : lead
+                );
+                renderLeads();
+                updateStats();
+                // Atualizar localStorage com cliente_id específico
+                localStorage.setItem(`crm-leads-${CLIENTE_ID}`, JSON.stringify(leads));
+            } catch (error) {
+                console.error('Erro ao atualizar status:', error);
+                leads = leads.map(lead => 
+                    lead.id == id ? updatedLead : lead
+                );
+                renderLeads();
+                updateStats();
+                // Atualizar localStorage com cliente_id específico
+                localStorage.setItem(`crm-leads-${CLIENTE_ID}`, JSON.stringify(leads));
+            }
+        };
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLeads();
+
+            document.getElementById('newLeadButton').addEventListener('click', () => {
+                resetForm();
+                document.getElementById('leadModal').classList.add('show');
+            });
+
+            document.querySelector('.close-button').addEventListener('click', () => {
+                document.getElementById('leadModal').classList.remove('show');
+                resetForm();
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target == document.getElementById('leadModal')) {
+                    document.getElementById('leadModal').classList.remove('show');
+                    resetForm();
+                }
+            });
+
+            document.getElementById('leadForm').addEventListener('submit', handleSubmit);
+
+            document.getElementById('searchTerm').addEventListener('input', (e) => {
+                searchTerm = e.target.value;
+                renderLeads();
+            });
+
+            document.getElementById('statusFilter').addEventListener('change', (e) => {
+                statusFilter = e.target.value;
+                renderLeads();
+            });
+
+            document.getElementById('leadsTab').addEventListener('click', () => {
+                activeTab = 'leads';
+                document.getElementById('leadsTab').classList.add('bg-blue-100', 'text-blue-800', 'border', 'border-blue-200');
+                document.getElementById('leadsTab').classList.remove('text-gray-600', 'hover:bg-gray-100');
+                document.getElementById('clientesTab').classList.remove('bg-blue-100', 'text-blue-800', 'border', 'border-blue-200');
+                document.getElementById('clientesTab').classList.add('text-gray-600', 'hover:bg-gray-100');
+                renderLeads();
+            });
+
+            document.getElementById('clientesTab').addEventListener('click', () => {
+                activeTab = 'clientes';
+                document.getElementById('clientesTab').classList.add('bg-blue-100', 'text-blue-800', 'border', 'border-blue-200');
+                document.getElementById('clientesTab').classList.remove('text-gray-600', 'hover:bg-gray-100');
+                document.getElementById('leadsTab').classList.remove('bg-blue-100', 'text-blue-800', 'border', 'border-blue-200');
+                document.getElementById('leadsTab').classList.add('text-gray-600', 'hover:bg-gray-100');
+                renderLeads();
+            });
+        });
+    </script>
+</body>
+</html>
+
